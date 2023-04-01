@@ -1,30 +1,30 @@
-import { EditorContent, useEditor } from '@tiptap/react'
-import StarterKit from '@tiptap/starter-kit'
 import { useState } from 'react'
 import { v4 as uuid } from 'uuid'
 import styles from './App.module.css'
 import { Note } from './type'
+import NoteEditor from './NoteEditor'
+import { JSONContent } from '@tiptap/react'
 
 function App() {
-  const [notes, setNotes] = useState({})
+  const [notes, setNotes] = useState<Record<string, Note>>({})
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null)
 
-  const editor = useEditor({
-    extensions: [StarterKit],
-    content: '<p>Hellow world!</p>',
-    editorProps: {
-      attributes: {
-        class: styles.textEditor,
+  const activeNote = activeNoteId ? notes[activeNoteId] : null
+
+  const handleChangeNoteContent = (
+    noteId: string,
+    content: JSONContent,
+    title = 'New note'
+  ) => {
+    setNotes((prev) => ({
+      ...prev,
+      [noteId]: {
+        ...notes[noteId],
+        updatedAt: new Date(),
+        content,
+        title,
       },
-    },
-  })
-
-  const toggleBold = () => {
-    editor?.chain().focus().toggleBold().run()
-  }
-
-  const toggleItalic = () => {
-    editor?.chain().focus().toggleItalic().run()
+    }))
   }
 
   const handleCreateNewNote = () => {
@@ -39,6 +39,8 @@ function App() {
       ...prev,
       [newNote.id]: newNote,
     }))
+
+    setActiveNoteId(newNote.id)
   }
 
   const noteList = Object.values(notes).sort(
@@ -61,7 +63,11 @@ function App() {
               key={note.id}
               role='button'
               tabIndex={0}
-              className={styles.sidebarItem}
+              className={
+                note.id === activeNoteId
+                  ? styles.sidebarItemActive
+                  : styles.sidebarItem
+              }
               onClick={() => handleChangeActiveNote(note.id)}
             >
               {note.title}
@@ -69,34 +75,16 @@ function App() {
           ))}
         </div>
       </div>
-      <div className={styles.editorContainer}>
-        <div className={styles.toolbar}>
-          <button
-            className={
-              editor?.isActive('bold')
-                ? styles.toolbarButtonActive
-                : styles.toolbarButton
-            }
-            onClick={toggleBold}
-          >
-            bold
-          </button>
-          <button
-            className={
-              editor?.isActive('italic')
-                ? styles.toolbarButtonActive
-                : styles.toolbarButton
-            }
-            onClick={toggleItalic}
-          >
-            italic
-          </button>
-        </div>
-        <EditorContent
-          editor={editor}
-          className={styles.textEditorContent}
-        ></EditorContent>
-      </div>
+      {activeNote ? (
+        <NoteEditor
+          note={activeNote}
+          onChange={(content, title) =>
+            handleChangeNoteContent(activeNote.id, content, title)
+          }
+        />
+      ) : (
+        <div>Create a new note or select an existing one.</div>
+      )}
     </div>
   )
 }
