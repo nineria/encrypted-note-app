@@ -3,11 +3,12 @@ import styles from './LoginPage.module.css'
 import { AES, enc } from 'crypto-js'
 import storage from './storage'
 import { v4 as uuid } from 'uuid'
+import { UserData } from './type'
 
 const PASSPHRASE_STORAGE_KEY = 'passphrase'
 
 type Props = {
-  setUserData: (userData: { username: string; passphrase: string }) => void
+  setUserData: (userData: UserData) => void
 }
 
 function LoginPage({ setUserData }: Props) {
@@ -18,21 +19,21 @@ function LoginPage({ setUserData }: Props) {
   const handleSummit = (e: FormEvent) => {
     e.preventDefault()
 
-    const encryptPassphrase = storage.get<string | undefined>(
+    const encryptedPassphrase = storage.get<string | undefined>(
       `${username}:${PASSPHRASE_STORAGE_KEY}`
     )
 
-    if (!encryptPassphrase) {
+    if (!encryptedPassphrase) {
       const passphrase = uuid()
       storage.set(
         `${username}:${PASSPHRASE_STORAGE_KEY}`,
-        AES.encrypt(passphrase, passphrase).toString()
+        AES.encrypt(passphrase, password).toString()
       )
       setUserData({ username, passphrase })
       return
     }
 
-    const passphrase = AES.decrypt(encryptPassphrase, password).toString(
+    const passphrase = AES.decrypt(encryptedPassphrase, password).toString(
       enc.Utf8
     )
 
